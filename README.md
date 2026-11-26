@@ -26,27 +26,33 @@ The built-in Agent tool cannot use the local model, so a worker is always a sepa
 
 ## Install
 
-Clone the repository, then run the setup script from your own terminal.
+Run one line in your own terminal. It downloads the repository, runs setup and removes the download. No clone or git is needed.
+
+Windows (PowerShell):
 
 ```powershell
-git clone https://github.com/EduardSmilyi/claude-local-agent.git
-```
-
-```powershell
-cd claude-local-agent
-```
-
-Windows:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
+irm https://raw.githubusercontent.com/EduardSmilyi/claude-local-agent/main/scripts/install.ps1 | iex
 ```
 
 Linux and macOS:
 
 ```bash
-bash scripts/setup.sh
+curl -fsSL https://raw.githubusercontent.com/EduardSmilyi/claude-local-agent/main/scripts/install.sh | bash
 ```
+
+This runs code straight from the `main` branch. Read the scripts first if you do not trust the source.
+
+To pass options:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/EduardSmilyi/claude-local-agent/main/scripts/install.ps1))) -Configure
+```
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/EduardSmilyi/claude-local-agent/main/scripts/install.sh | bash -s -- --configure
+```
+
+From a clone, run `powershell -ExecutionPolicy Bypass -File scripts/setup.ps1` or `bash scripts/setup.sh` instead.
 
 Setup installs three things:
 
@@ -63,7 +69,7 @@ It then asks for the server URL, token (hidden), model, context window and max o
 | `-Configure` / `--configure` | Ask for the settings again |
 | `-InstallDir <dir>` / `--install-dir <dir>` | Put `claude-local` somewhere else, for example when the folder of `claude` is not writable |
 
-To update, pull and run setup again. Replaced files are kept with a `.bak` suffix.
+To update, run the install line again (or pull and run setup). Replaced files are kept with a `.bak` suffix.
 
 ### Upgrading from the `local-worker` plugin
 
@@ -126,6 +132,7 @@ The [skill](skills/local-agent/SKILL.md) describes permissions, background sessi
 | `scripts/claude-local.ps1` | The wrapper for Windows |
 | `scripts/claude-local` | The wrapper for Linux and macOS |
 | `scripts/setup.ps1`, `scripts/setup.sh` | Setup |
+| `scripts/install.ps1`, `scripts/install.sh` | Download and run setup |
 | `settings.template.json` | Settings template |
 
 ## Limitations

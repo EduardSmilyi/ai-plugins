@@ -11,12 +11,12 @@ The built-in Agent tool cannot use the local model: its subagents run on this se
 
 ## Setup
 
-Setup asks for a token, so the user runs it in their own terminal, from their clone of the `claude-local-agent` repository. Do not collect these values in chat.
+Setup asks for a token, so the user runs it in their own terminal. Do not run it for them or collect these values in chat.
 
-- Windows: `powershell -ExecutionPolicy Bypass -File scripts/setup.ps1`
-- Linux and macOS: `bash scripts/setup.sh`
+- Windows: `irm https://raw.githubusercontent.com/EduardSmilyi/claude-local-agent/main/scripts/install.ps1 | iex`
+- Linux and macOS: `curl -fsSL https://raw.githubusercontent.com/EduardSmilyi/claude-local-agent/main/scripts/install.sh | bash`
 
-Running it again updates the installed files. `-Configure` (`--configure` on Linux and macOS) asks for the settings again.
+Running it again updates the installed files. From a clone of the repository, `scripts/setup.ps1 -Configure` or `bash scripts/setup.sh --configure` asks for the settings again.
 
 ## What to delegate
 

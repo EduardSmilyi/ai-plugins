@@ -107,7 +107,7 @@ if (-not $Configure -and -not $interactive) {
     if ($filled) {
         "settings: $settingsFile kept"
     } else {
-        "settings: $settingsFile is not filled in. Run this script in a terminal to answer the questions."
+        "settings: $settingsFile is not filled in. Run setup in a terminal to answer the questions."
     }
     return
 }
@@ -165,6 +165,42 @@ foreach ($name in 'ANTHROPIC_SMALL_FAST_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL'
 Set-Value 'CLAUDE_CODE_MAX_CONTEXT_TOKENS' $context
 Set-Value 'CLAUDE_CODE_MAX_OUTPUT_TOKENS' $output
 
+# Windows PowerShell pads its JSON with column-aligned spaces, so indent the
+# compact form here, with two spaces like the template and setup.sh.
+function Format-Json([string]$json) {
+    $result = New-Object Text.StringBuilder
+    $depth = 0
+    # A token is a whole string, an empty object or array, or a single character.
+    foreach ($match in [regex]::Matches($json, '"(?:\\.|[^"\\])*"|\{\}|\[\]|.')) {
+        $token = $match.Value
+        if ($token -eq '{' -or $token -eq '[') {
+            $depth++
+            [void]$result.Append($token).Append("`n").Append('  ' * $depth)
+        } elseif ($token -eq '}' -or $token -eq ']') {
+            $depth--
+            [void]$result.Append("`n").Append('  ' * $depth).Append($token)
+        } elseif ($token -eq ',') {
+            [void]$result.Append(",`n").Append('  ' * $depth)
+        } elseif ($token -eq ':') {
+            [void]$result.Append(': ')
+        } else {
+            # Write & ' < > as themselves instead of \u escapes. Matching
+            # every escape pair keeps an escaped backslash from being misread.
+            $token = [regex]::Replace($token, '\\(u00(26|27|3c|3e)|.)', {
+                    param($escape)
+                    if ($escape.Groups[2].Success) {
+                        [string][char][Convert]::ToInt32($escape.Groups[2].Value, 16)
+                    } else {
+                        $escape.Value
+                    }
+                })
+            [void]$result.Append($token)
+        }
+    }
+    $result.ToString() + "`n"
+}
+
 # No BOM, so that every JSON reader accepts the file.
-[IO.File]::WriteAllText($settingsFile, (ConvertTo-Json $settings -Depth 20), (New-Object Text.UTF8Encoding($false)))
+$json = Format-Json (ConvertTo-Json $settings -Depth 20 -Compress)
+[IO.File]::WriteAllText($settingsFile, $json, (New-Object Text.UTF8Encoding($false)))
 "settings: saved to $settingsFile"

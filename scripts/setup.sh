@@ -162,7 +162,7 @@ if [ -z "$configure" ] && [ ! -t 0 ]; then
     if [ -n "$filled" ]; then
         echo "settings: $settings kept"
     else
-        echo "settings: $settings is not filled in. Run this script in a terminal to answer the questions."
+        echo "settings: $settings is not filled in. Run setup in a terminal to answer the questions."
     fi
     exit 0
 fi
