@@ -1,0 +1,16 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "<your local server URL>",
+    "ANTHROPIC_AUTH_TOKEN": "<your token>",
+    "ANTHROPIC_MODEL": "<your model>",
+    "ANTHROPIC_SMALL_FAST_MODEL": "<your model>",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "<your model>",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "<your model>",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "<your model>",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "DISABLE_AUTOUPDATER": "1",
+    "DISABLE_TELEMETRY": "1",
+    "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "204800",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "25600"
+  }
+}

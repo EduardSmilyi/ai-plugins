@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# claude-local: runs Claude Code exactly like `claude`, but loads settings from
+# ~/.claude/local-agent/settings.json instead of ~/.claude/settings.json.
+# Linux and macOS. Windows uses claude-local.ps1.
+#
+# Every argument is passed through unchanged, as are stdin, stdout, stderr and
+# the exit code. Credentials are not settings and are still used as-is.
+#
+# Overrides:
+#   CLAUDE_LOCAL_SETTINGS  path to a different settings file to use.
+#   CLAUDE_CONFIG_DIR      Claude Code's config folder (default ~/.claude).
+
+die() {
+    echo "claude-local: $*" >&2
+    exit 1
+}
+
+settings=${CLAUDE_LOCAL_SETTINGS:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/local-agent/settings.json}
+[ -f "$settings" ] || die "settings file not found: $settings"
+# --settings must keep working if claude changes directory.
+case $settings in /*) ;; *) settings=$PWD/$settings ;; esac
+
+claude=$(command -v claude)
+case $claude in
+    */*) ;;
+    *) claude=$(dirname "$0")/claude ;;
+esac
+[ -x "$claude" ] || die 'the claude executable was not found on PATH.'
+
+# Prints NAME=VALUE for each entry of the "env" block, NUL-terminated, followed
+# by a lone "ok" so that a parse failure is detected. Parser errors are hidden
+# because they can quote the file, which holds secrets.
+dump_env() {
+    if command -v jq >/dev/null 2>&1; then
+        jq -j '((.env // {}) | to_entries[] | "\(.key)=\(.value)\u0000"), "ok\u0000"' "$settings"
+    elif command -v node >/dev/null 2>&1; then
+        node -e '
+            const text = require("fs").readFileSync(process.argv[1], "utf8").replace(/^﻿/, "");
+            const env = JSON.parse(text).env || {};
+            for (const [k, v] of Object.entries(env)) process.stdout.write(k + "=" + v + "\0");
+            process.stdout.write("ok\0");
+        ' "$settings"
+    elif python3 -c '' >/dev/null 2>&1; then
+        python3 -c '
+import json, sys
+env = json.load(open(sys.argv[1], encoding="utf-8-sig")).get("env") or {}
+for k, v in env.items():
+    sys.stdout.write("%s=%s\0" % (k, v))
+sys.stdout.write("ok\0")
+' "$settings"
+    else
+        echo 'claude-local: jq, node or python3 is needed to read the settings file.' >&2
+        return 1
+    fi 2>/dev/null
+}
+
+command -v jq >/dev/null 2>&1 || command -v node >/dev/null 2>&1 || python3 -c '' >/dev/null 2>&1 ||
+    die 'jq, node or python3 is needed to read the settings file.'
+
+# Claude Code does not apply the "env" block of a --settings file to the
+# variables it reads at startup (e.g. ANTHROPIC_BASE_URL), so export them here.
+parsed=
+while IFS= read -r -d '' entry; do
+    if [ "$entry" = ok ]; then
+        parsed=1
+    elif [[ $entry =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+        export "$entry"
+    fi
+done < <(dump_env)
+[ -n "$parsed" ] || die "$settings is not valid JSON. Fix it and retry."
+
+# The desktop app passes this to child processes. With it set, requests to the
+# local server fail with 401.
+unset CLAUDE_CODE_ENTRYPOINT
+
+# Our flags go first; anything the caller passes is forwarded after them.
+exec "$claude" --setting-sources project,local --settings "$settings" "$@"
